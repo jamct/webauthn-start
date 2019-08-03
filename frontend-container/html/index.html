@@ -1,22 +1,43 @@
 <!doctype html>
 
 <html lang="de">
-<head>
-  <meta charset="utf-8">
 
-  <title>Demo: Webauthn-Frontend</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="libs/css/bootstrap.min.css">
+<head>
+	<meta charset="utf-8">
+
+	<title>Demo: Webauthn-Frontend</title>
+	<link rel="stylesheet" href="./css/styles.css">
+	<link rel="stylesheet" href="./libs/css/bootstrap.min.css">
 </head>
 
 <body>
-  <script src="js/scripts.js"></script>
-	<nav>
-	<ul>
-		<li>Home</li>
-		<li>Login</li>
-		<li>Register</li>
-	</ul>
+	<script src="js/scripts.js"></script>
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+		<a class="navbar-brand" href="./">Webauthn-Demo</a>
+		<div class="collapse navbar-collapse">
+
+			<ul class="navbar-nav mr-auto">
+				<li class="nav-item"><a href="./" class="nav-link">Home</a></li>
+				<li class="nav-item"><a href="/internal/" class="nav-link">Interner Bereich</a></li>
+			</ul>
+			<form class="form-inline">
+				<a href="/register/"><button class="btn btn-outline-success" type="button">Registrieren</button></a>
+				<a href="/login/"><button class="btn btn-outline-primary" type="button">Login</button></a>
+			</form>
+		</div>
 	</nav>
+	<div class="container">
+		<div class="row">
+			<h1>Willkommen</h1>
+		</div>
+		<div class="row">
+			<div class="col-md">
+				<p>Dies ist eine Demo</p>
+			</div>
+		</div>
+
+
+
 </body>
+
 </html>

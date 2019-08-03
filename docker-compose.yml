@@ -1,14 +1,28 @@
 version: "3.7"
 services:
+
+  traefik:
+    image: traefik:v2.0
+    command: --providers.docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+    ports:
+      - "80:80"
+
+  backend:
+    build: ./backend-container
+    volumes:
+     - ./backend-container/src:/app
+     - ./data/gorm.db:/tmp/gorm.db
+
+    labels:
+     - "traefik.http.routers.back.rule=Host(`localhost`) && PathPrefix(`/auth`)"
+     - "traefik.http.middlewares.backend-stripprefix.stripprefix.prefixes=/auth"
+     - "traefik.http.routers.back.middlewares=backend-stripprefix@docker"
+
   frontend:
     build: ./frontend-container
     volumes:
      - ./frontend-container/html:/usr/share/nginx/html:ro
-    ports:
-     - 9000:80
-
- # webauth-backend:
-
- # user-backend:
-
-#  db:
+    labels:
+      - traefik.http.routers.frontend.rule=Host(`localhost`)

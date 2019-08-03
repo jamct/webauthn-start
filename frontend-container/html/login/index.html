@@ -1,0 +1,146 @@
+<!doctype html>
+
+<html lang="de">
+
+<head>
+	<meta charset="utf-8">
+
+	<title>Demo: Webauthn-Frontend</title>
+	<link rel="stylesheet" href="../libs/css/bootstrap.min.css">
+</head>
+
+<body>
+	<script src="../libs/js/jquery.js"></script>
+	<script src="../script.js"></script>
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+		<a class="navbar-brand" href="../">Webauthn-Demo</a>
+		<div class="collapse navbar-collapse">
+
+			<ul class="navbar-nav mr-auto">
+				<li class="nav-item"><a href="../" class="nav-link">Home</a></li>
+				<li class="nav-item"><a href="/internal/" class="nav-link">Interner Bereich</a></li>
+			</ul>
+			<form class="form-inline">
+				<a href="/register/"><button class="btn btn-outline-success" type="button">Registrieren</button></a>
+				<a href="/login/"><button class="btn btn-outline-primary" type="button">Login</button></a>
+			</form>
+		</div>
+	</nav>
+	<div class="container">
+		<div class="row">
+			<h1>Anmelden</h1>
+		</div>
+		<div class="row">
+			<div class="col-md">
+				<form>
+					<div class="form-group">
+						<label for="inputUsername">Benutzername</label>
+						<input type="text" class="form-control" id="inputUsername" placeholder="Benutzername">
+					</div>
+
+					<button type="submit" id="btn_login" class="btn btn-primary">Anmelden</button>
+					<div class="alert alert-danger" role="alert" id="error_box" style="display: none;"></div>
+					<div class="alert alert-success" role="success" id="success_box" style="display: none;"></div>
+				</form>
+			</div>
+			<div class="col-sm">
+				<p>Geben Sie einen Benutzernamen ein und melden Sie sich an.</p>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		$(document).ready(function () {
+
+			//Throw an error, if WebAuthn is not supported by the browser
+			if (!window.PublicKeyCredential) {
+				$('#btn_login').hide();
+				$('#error_box').text("WebAuthn wird von Ihrem Browser nicht unterstützt! Installieren Sie einen aktuellen Browser wie Chrome oder Firefox.").fadeIn();
+				return;
+			}
+		});
+		$("#btn_login").click(
+			function (event) {
+				event.preventDefault();
+				$('#success_box').text("").fadeOut();
+				username = $("#inputUsername").val()
+				if (username.length === "") {
+					alert("Geben Sie Ihren Benutzernamen ein.");
+					return;
+				}
+
+				$.ajax({
+					type: 'POST',
+					url: '/auth/login/begin/',
+					data: JSON.stringify({ "username": username }),
+					success: function (data) {
+						$('#error_box').hide();
+						return data
+					},
+					error: function (data) {
+						$('#error_box').text(data.responseJSON).fadeIn();
+					},
+					dataType: 'json',
+					contentType: "application/json"
+				}).then((credentialRequestOptions) => {
+					credentialRequestOptions.publicKey.challenge = base64ToArray(credentialRequestOptions.publicKey.challenge);
+					credentialRequestOptions.publicKey.allowCredentials.forEach(function (listItem) {
+						listItem.id = base64ToArray(listItem.id)
+					});
+					return navigator.credentials.get({
+						publicKey: credentialRequestOptions.publicKey
+					})
+				})
+					.then((assertion) => {
+						let authData = assertion.response.authenticatorData;
+						let clientDataJSON = assertion.response.clientDataJSON;
+						let rawId = assertion.rawId;
+						let sig = assertion.response.signature;
+						let userHandle = assertion.response.userHandle;
+
+						$.ajax({
+							type: 'POST',
+							url: '/auth/login/finish/' + username,
+							data: JSON.stringify({
+								id: assertion.id,
+								rawId: arrayToBase64(rawId),
+								type: assertion.type,
+								response: {
+									authenticatorData: arrayToBase64(authData),
+									clientDataJSON: arrayToBase64(clientDataJSON),
+									signature: arrayToBase64(sig),
+									userHandle: arrayToBase64(userHandle),
+								},
+							}),
+							success: function (data) {
+								//no errors, no error box
+								$('#error_box').hide();
+								localStorage.token = data['token'];
+								$('#success_box').text(data['message']).fadeIn();
+							},
+							error: function (data) {
+								console.log(data)
+								$('#error_box').text(data.responseJSON).fadeIn();
+								return data
+							},
+							dataType: 'json',
+							contentType: "application/json"
+						})
+
+					})
+					.then((success) => {
+						return
+					})
+					.catch((error) => {
+						console.log(error)
+						$('#error_box').text("Der Benutzer " + username + " konnte nicht angemeldet werden. " + error.responseJSON).fadeIn();
+					})
+			});
+
+
+	</script>
+
+
+</body>
+
+</html>

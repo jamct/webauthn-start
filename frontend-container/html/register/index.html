@@ -1,0 +1,174 @@
+<!doctype html>
+
+<html lang="de">
+
+<head>
+	<meta charset="utf-8">
+
+	<title>Demo: Webauthn-Frontend</title>
+	<link rel="stylesheet" href="../libs/css/bootstrap.min.css">
+	<script src="../script.js"></script>
+	<script src="../libs/js/jquery.js"></script>
+
+</head>
+
+<body>
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+		<a class="navbar-brand" href="../">Webauthn-Demo</a>
+		<div class="collapse navbar-collapse">
+
+			<ul class="navbar-nav mr-auto">
+				<li class="nav-item"><a href="../" class="nav-link">Home</a></li>
+				<li class="nav-item"><a href="/internal/" class="nav-link">Interner Bereich</a></li>
+			</ul>
+			<form class="form-inline">
+				<a href="/register/"><button class="btn btn-outline-success" type="button">Registrieren</button></a>
+				<a href="/login/"><button class="btn btn-outline-primary" type="button">Login</button></a>
+			</form>
+		</div>
+	</nav>
+	<div class="container">
+		<div class="row">
+			<h1>Registrieren</h1>
+		</div>
+		<div class="row">
+			<div class="col-md">
+				<form>
+					<div class="form-group">
+						<label for="inputMail">Benutzername</label>
+						<input type="text" class="form-control" id="inputUsername" placeholder="Benutzername">
+					</div>
+					<div class="form-group">
+						<label for="inputFirstname">Vorname</label>
+						<input type="text" class="form-control" id="inputFirstname" placeholder="Vorname">
+						<label for="inputLastname">Nachname</label>
+						<input type="text" class="form-control" id="inputLastname" placeholder="Nachname">
+					</div>
+					<button id="btn_register" class="btn btn-primary">Registrieren</button>
+					<div class="alert alert-danger" role="alert" id="error_box" style="display: none;"></div>
+					<div class="alert alert-success" role="success" id="success_box" style="display: none;"></div>
+				</form>
+			</div>
+			<div class="col-sm">
+				<p>Geben Sie einen Benutzernamen, Ihren Vor- und Nachnamen ein und registrieren Sie sich. Anschließend
+					werden Sie aufgefordert, Ihren Authenticator (z.B. USB-Token oder Fingerabdrucksensor) zu
+					aktivieren.</p>
+			</div>
+			<div class="col-sm">
+				<div class="custom-control custom-switch">
+					<input type="checkbox" class="custom-control-input" id="switchDebug">
+					<label class="custom-control-label" for="switchDebug">Debug-Informationen anzeigen.</label>
+				</div>
+				<code id="debug_box"
+					style="white-space: pre-wrap;display:none;">nothing to show. start registration.</code>
+			</div>
+		</div>
+	</div>
+	<script>
+
+		$('#switchDebug').change(function () {
+			if ($(this).is(":checked")) {
+				$('#debug_box').fadeIn();
+			} else {
+				$('#debug_box').fadeOut();
+			}
+
+		});
+
+		$(document).ready(function () {
+
+			//Throw an error, if WebAuthn is not supported by the browser.
+			if (!window.PublicKeyCredential) {
+				$('#btn_register').hide();
+				$('#error_box').html("WebAuthn wird von Ihrem Browser nicht unterstützt! Installieren Sie einen <a href='https://caniuse.com/#search=webauthn'>aktuellen Browser.</<a>").fadeIn();
+				return;
+			}
+		});
+
+		$("#btn_register").click(
+			function (event) {
+				event.preventDefault();
+				username = $("#inputUsername").val();
+				firstname = $("#inputFirstname").val();
+				lastname = $("#inputLastname").val();
+				$('#error_box').hide();
+				if (username.length < 3 || firstname.length < 2 || lastname.length < 2) {
+					$('#error_box').text("Geben Sie einen Benutzernamen (mind. 3 Zeichen), Vor- und Nachnamen ein.").fadeIn();
+					return;
+				}
+
+				$.ajax({
+					type: 'POST',
+					url: '/auth/register/begin/',
+					data: JSON.stringify({ "username": username, "firstname": firstname, "lastname": lastname }),
+					success: function (data) {
+						//no errors, no error box
+						$('#error_box').hide();
+						return data
+					},
+					error: function (data) {
+						//something went wrong. Show error box
+						$('#error_box').text(data.responseJSON).fadeIn();
+					},
+					dataType: 'json',
+					contentType: "application/json"
+				}).then((credentialCreationOptions) => {
+					//All Variables here  are named  as described in W3C Recommendation: https://www.w3.org/TR/webauthn/
+					$('#debug_box').text(JSON.stringify(credentialCreationOptions));
+					credentialCreationOptions.publicKey.challenge = base64ToArray(credentialCreationOptions.publicKey.challenge);
+					credentialCreationOptions.publicKey.user.id = base64ToArray(credentialCreationOptions.publicKey.user.id);
+					if (credentialCreationOptions.publicKey.excludeCredentials) {
+						for (var i = 0; i < credentialCreationOptions.publicKey.excludeCredentials.length; i++) {
+							credentialCreationOptions.publicKey.excludeCredentials[i].id = base64ToArray(credentialCreationOptions.publicKey.excludeCredentials[i].id);
+						}
+					}
+					return navigator.credentials.create({
+						publicKey: credentialCreationOptions.publicKey
+					})
+				}).then((credential) => {
+					let attestationObject = credential.response.attestationObject;
+					let clientDataJSON = credential.response.clientDataJSON;
+					let rawId = credential.rawId;
+
+					$('#debug_box').append("added credential:" + credential.id);
+
+					$.ajax({
+						type: 'POST',
+						url: '/auth/register/finish/' + username,
+						data: JSON.stringify({
+							id: credential.id,
+							rawId: arrayToBase64(rawId),
+							type: credential.type,
+							response: {
+								attestationObject: arrayToBase64(attestationObject),
+								clientDataJSON: arrayToBase64(clientDataJSON),
+							},
+						}),
+
+						success: function (data) {
+							//no errors, no error box
+							$('#error_box').hide();
+							$('#success_box').text(data).fadeIn();
+
+						},
+						error: function (data) {
+							//something went wrong. Show error box
+							$('#error_box').text(data).fadeIn();
+						},
+
+						dataType: 'json',
+						contentType: "application/json"
+					})
+				}).then((success) => {
+					return
+				}).catch((error) => {
+					$('#error_box').text("Der Benutzer " + username + " konnte nicht registriert werden. " + error.responseJSON).fadeIn();
+				})
+
+			});
+
+
+	</script>
+</body>
+
+</html>

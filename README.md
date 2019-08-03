@@ -1,2 +1,2 @@
-# webauthn-start
-A microservice demo application for webauthn. Written in PHP an Golang.
+# WebAuthn proof of concept
+A microservice demo application for WebAuthn. Written in Golang with a very simple bootstrap frontend.
