@@ -2,9 +2,11 @@
 
 Eine Microservice-Anwendung für die Registrierung und Anmeldung mit WebAuthn. Verpackt in Docker-Container und mit einem Docker-Compopse-File versehen.
 
+![Eine Registrierung in Aktion.](webauthn1.png)
+
 ## Getting started
 
-Zum Hochfahren des Setups reicht der folngende Befehl:
+Zum Hochfahren des Setups reicht der folgende Befehl:
 
 ```
 docker-compose up
