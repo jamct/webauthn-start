@@ -19,7 +19,7 @@ var JWTIssuer = getenv("JWT_ISSUER", "localhost")
 
 var Timezone = getenv("SERVER_TIMEZONE", "Europe/Berlin")
 
-var SqliteStorage = getenv("SQLITE_STORAGE", "/tmp/gorm.db")
+var SqliteStorage = getenv("SQLITE_STORAGE", "/db/gorm.db")
 
 func getenv(key, fallback string) string {
 	value := os.Getenv(key)
