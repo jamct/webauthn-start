@@ -13,7 +13,7 @@ services:
     build: ./backend-container
     volumes:
      - ./backend-container/src:/app
-     - ./data/gorm.db:/tmp/gorm.db
+     - ./data/:/db/
 
     labels:
      - "traefik.http.routers.back.rule=Host(`localhost`) && PathPrefix(`/auth`)"
