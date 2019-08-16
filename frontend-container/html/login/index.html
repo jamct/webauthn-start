@@ -46,11 +46,28 @@
 			<div class="col-sm">
 				<p>Geben Sie einen Benutzernamen ein und melden Sie sich an.</p>
 			</div>
+			<div class="col-sm">
+				<div class="custom-control custom-switch">
+					<input type="checkbox" class="custom-control-input" id="switchDebug">
+					<label class="custom-control-label" for="switchDebug">Debug-Informationen anzeigen.</label>
+				</div>
+				<code id="debug_box"
+					style="white-space: pre-wrap;display:none;">nothing to show. start registration.</code>
+			</div>
 		</div>
 	</div>
 
 	<script>
 		$(document).ready(function () {
+			$('#switchDebug').change(function () {
+				if ($(this).is(":checked")) {
+					$('#debug_box').fadeIn();
+				} else {
+					$('#debug_box').fadeOut();
+				}
+
+			});
+
 
 			//Throw an error, if WebAuthn is not supported by the browser
 			if (!window.PublicKeyCredential) {
@@ -83,6 +100,7 @@
 					dataType: 'json',
 					contentType: "application/json"
 				}).then((credentialRequestOptions) => {
+					$('#debug_box').text(JSON.stringify(credentialRequestOptions));
 					credentialRequestOptions.publicKey.challenge = base64ToArray(credentialRequestOptions.publicKey.challenge);
 					credentialRequestOptions.publicKey.allowCredentials.forEach(function (listItem) {
 						listItem.id = base64ToArray(listItem.id)
