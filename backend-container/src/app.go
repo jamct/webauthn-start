@@ -28,7 +28,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatal("uable to create webauthn:", err)
+		log.Fatal("unable to create webauthn:", err)
 	}
 
 	sessionStore, err = session.NewStore([]byte("test"))
