@@ -1,8 +1,8 @@
-version: "3.7"
+version: "3.9"
 services:
 
   traefik:
-    image: traefik:v2.0
+    image: trafic:v3.0
     command: --providers.docker
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:rw
